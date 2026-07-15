@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:prolook.com)",
+      "WebFetch(domain:customizer.prolook.com)",
+      "Bash(mkdir -p /tmp/prolook)",
+      "Read(//tmp/**)",
+      "Bash(curl -sSL -A \"Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36\" https://customizer.prolook.com/sports -o index.html)",
+      "Bash(grep -oE 'data-page=\"[^\"]{0,500}' index.html)",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s -o /dev/null -w 'HTTP %{http_code}  size=%{size_download}  redir=%{redirect_url}\\\\n' -A Mozilla/5.0 https://customizer.prolook.com/__TRACKED_VAR__)",
+      "Bash(curl -s -H \"Accept: application/json\" -A \"Mozilla/5.0\" \"https://customizer.prolook.com/api/team-database/aux/prolook/colors\")"
+    ]
+  }
+}
