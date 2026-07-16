@@ -27,6 +27,3 @@ struct CoachTabView: View {
     }
 }
 
-#Preview {
-    CoachTabView().environment(Session())
-}

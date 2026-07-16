@@ -5,7 +5,7 @@ struct PlaceholderScreen: View {
     let systemImage: String
     let message: String
 
-    @Environment(Session.self) private var session
+    @Environment(AuthService.self) private var auth
 
     var body: some View {
         NavigationStack {
@@ -23,7 +23,7 @@ struct PlaceholderScreen: View {
             .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Sign Out") { session.signOut() }
+                    Button("Sign Out") { auth.signOut() }
                 }
             }
         }

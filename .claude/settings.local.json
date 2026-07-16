@@ -10,7 +10,8 @@
       "Bash(python3 -c ' *)",
       "Bash(curl -s -o /dev/null -w 'HTTP %{http_code}  size=%{size_download}  redir=%{redirect_url}\\\\n' -A Mozilla/5.0 https://customizer.prolook.com/__TRACKED_VAR__)",
       "Bash(curl -s -H \"Accept: application/json\" -A \"Mozilla/5.0\" \"https://customizer.prolook.com/api/team-database/aux/prolook/colors\")",
-      "Bash(xcodebuild -project DustyDemo.xcodeproj -scheme DustyDemo -destination 'generic/platform=iOS Simulator' -configuration Debug build)"
+      "Bash(xcodebuild -project DustyDemo.xcodeproj -scheme DustyDemo -destination 'generic/platform=iOS Simulator' -configuration Debug build)",
+      "Bash(xcodebuild -project /Users/talmage/Code/DustyDemo/DustyDemo.xcodeproj -scheme DustyDemo -destination 'generic/platform=iOS Simulator' -configuration Debug build)"
     ]
   }
 }

@@ -1,61 +1,83 @@
 import SwiftUI
 
 struct SignInView: View {
-    @Environment(Session.self) private var session
+    @Environment(AuthService.self) private var auth
     @State private var email = ""
-    @State private var showRolePicker = false
+    @State private var password = ""
+    @State private var showingSignUp = false
+    @State private var isSubmitting = false
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        NavigationStack {
+            VStack(spacing: 24) {
+                Spacer()
 
-            VStack(spacing: 8) {
-                Image(systemName: "tshirt.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(.tint)
-                Text("DustyDemo")
-                    .font(.appLargeTitle)
-                Text("Team uniforms, on your phone.")
-                    .font(.appCaption)
-                    .foregroundStyle(AppColors.textMuted)
-            }
-
-            Spacer()
-
-            VStack(spacing: 12) {
-                TextField("Email", text: $email)
-                    .textFieldStyle(.roundedBorder)
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.emailAddress)
-
-                Button {
-                    showRolePicker = true
-                } label: {
-                    Text("Continue")
-                        .font(.appHeadline)
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 8) {
+                    Image(systemName: "tshirt.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(.tint)
+                    Text("DustyDemo")
+                        .font(.appLargeTitle)
+                    Text("Team uniforms, on your phone.")
+                        .font(.appCaption)
+                        .foregroundStyle(AppColors.textMuted)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(email.isEmpty)
-            }
-            .padding(.horizontal)
 
-            Text("Demo build — real auth in Step 2")
-                .font(.caption2)
-                .foregroundStyle(AppColors.textMuted)
-                .padding(.bottom)
-        }
-        .padding()
-        .confirmationDialog("Sign in as…", isPresented: $showRolePicker, titleVisibility: .visible) {
-            ForEach(Session.Role.allCases) { role in
-                Button(role.displayName) { session.signIn(as: role) }
+                Spacer()
+
+                VStack(spacing: 12) {
+                    TextField("Email", text: $email)
+                        .textFieldStyle(.roundedBorder)
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
+
+                    SecureField("Password", text: $password)
+                        .textFieldStyle(.roundedBorder)
+
+                    if let error = auth.lastError {
+                        Text(error)
+                            .font(.appCaption)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    Button {
+                        Task {
+                            isSubmitting = true
+                            await auth.signIn(email: email, password: password)
+                            isSubmitting = false
+                        }
+                    } label: {
+                        if isSubmitting {
+                            ProgressView().tint(.white)
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            Text("Sign In")
+                                .font(.appHeadline)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(!canSubmit || isSubmitting)
+
+                    Button("Create an account") { showingSignUp = true }
+                        .font(.appCaption)
+                        .padding(.top, 4)
+                }
+                .padding(.horizontal)
+
+                Spacer()
             }
-            Button("Cancel", role: .cancel) { }
+            .padding()
+            .sheet(isPresented: $showingSignUp) {
+                SignUpView()
+            }
         }
     }
-}
 
-#Preview {
-    SignInView().environment(Session())
+    private var canSubmit: Bool {
+        !email.isEmpty && password.count >= 6
+    }
 }

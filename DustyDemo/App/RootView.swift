@@ -1,30 +1,19 @@
 import SwiftUI
 
 struct RootView: View {
-    @Environment(Session.self) private var session
+    @Environment(AuthService.self) private var auth
 
     var body: some View {
-        switch session.state {
+        switch auth.state {
+        case .loading:
+            ProgressView().controlSize(.large)
         case .signedOut:
             SignInView()
-        case .signedIn(role: .player):
-            PlayerTabView()
-        case .signedIn(role: .coach):
-            CoachTabView()
+        case .signedIn(let profile):
+            switch profile.role {
+            case .player: PlayerTabView()
+            case .coach:  CoachTabView()
+            }
         }
     }
-}
-
-#Preview("Signed out") {
-    RootView().environment(Session())
-}
-
-#Preview("Player") {
-    let s = Session(); s.signIn(as: .player)
-    return RootView().environment(s)
-}
-
-#Preview("Coach") {
-    let s = Session(); s.signIn(as: .coach)
-    return RootView().environment(s)
 }

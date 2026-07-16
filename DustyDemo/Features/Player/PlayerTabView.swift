@@ -27,6 +27,3 @@ struct PlayerTabView: View {
     }
 }
 
-#Preview {
-    PlayerTabView().environment(Session())
-}

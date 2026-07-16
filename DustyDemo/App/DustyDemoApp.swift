@@ -1,37 +1,19 @@
 import SwiftUI
+import FirebaseCore
 
 @main
 struct DustyDemoApp: App {
-    @State private var session = Session()
+    @State private var auth: AuthService
+
+    init() {
+        FirebaseApp.configure()
+        _auth = State(initialValue: AuthService())
+    }
 
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environment(session)
+                .environment(auth)
         }
     }
-}
-
-@Observable
-final class Session {
-    enum State {
-        case signedOut
-        case signedIn(role: Role)
-    }
-
-    enum Role: String, CaseIterable, Identifiable {
-        case player, coach
-        var id: String { rawValue }
-        var displayName: String {
-            switch self {
-            case .player: "Player"
-            case .coach:  "Coach"
-            }
-        }
-    }
-
-    var state: State = .signedOut
-
-    func signIn(as role: Role) { state = .signedIn(role: role) }
-    func signOut()             { state = .signedOut }
 }
