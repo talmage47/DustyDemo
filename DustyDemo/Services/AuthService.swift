@@ -6,7 +6,7 @@ import FirebaseFirestore
 @MainActor
 final class AuthService {
     enum State: Equatable {
-        case loading           // launching, waiting to hear from Firebase Auth
+        case loading
         case signedOut
         case signedIn(UserProfile)
     }
@@ -14,14 +14,11 @@ final class AuthService {
     private(set) var state: State = .loading
     private(set) var lastError: String?
 
-    private let auth  = Auth.auth()
-    private let db    = Firestore.firestore()
+    private let auth = Auth.auth()
+    private let db   = Firestore.firestore()
     private var authStateHandle: AuthStateDidChangeListenerHandle?
 
     init() {
-        // Firebase Auth persists sessions across launches. Listen for state
-        // changes and resolve into a fully-hydrated UserProfile (Auth uid +
-        // Firestore users/{uid} doc holds the role).
         authStateHandle = auth.addStateDidChangeListener { [weak self] _, firebaseUser in
             guard let self else { return }
             Task { @MainActor in
@@ -30,16 +27,12 @@ final class AuthService {
         }
     }
 
-    // No deinit: AuthService is held in the app's WindowGroup environment for
-    // the app's entire lifetime, so tearing down the listener is unnecessary.
-
     // MARK: - Public API
 
     func signIn(email: String, password: String) async {
         lastError = nil
         do {
             _ = try await auth.signIn(withEmail: email, password: password)
-            // authStateDidChange listener will hydrate state
         } catch {
             lastError = friendlyMessage(from: error)
         }
@@ -53,10 +46,10 @@ final class AuthService {
                 id: result.user.uid,
                 email: email,
                 displayName: displayName,
-                role: role
+                role: role,
+                teamID: SeedService.demoTeamID  // POC: everyone joins the demo team
             )
             try db.collection("users").document(profile.id).setData(from: profile)
-            // authStateDidChange listener will hydrate state from the new user
         } catch {
             lastError = friendlyMessage(from: error)
         }
@@ -64,8 +57,17 @@ final class AuthService {
 
     func signOut() {
         lastError = nil
+        do { try auth.signOut() }
+        catch { lastError = friendlyMessage(from: error) }
+    }
+
+    /// Persist a mutation to the current user's profile doc, and update local state.
+    func updateCurrentProfile(_ mutate: (inout UserProfile) -> Void) async {
+        guard case .signedIn(var profile) = state else { return }
+        mutate(&profile)
         do {
-            try auth.signOut()
+            try db.collection("users").document(profile.id).setData(from: profile)
+            state = .signedIn(profile)
         } catch {
             lastError = friendlyMessage(from: error)
         }
@@ -79,16 +81,20 @@ final class AuthService {
             return
         }
         do {
-            let snap = try await db.collection("users").document(firebaseUser.uid).getDocument()
-            if let profile = try? snap.data(as: UserProfile.self) {
-                state = .signedIn(profile)
-            } else {
-                // Auth account exists but Firestore user doc is missing — treat as signed out
-                // so the user can re-run sign-up. Shouldn't happen in normal flows.
+            let docRef = db.collection("users").document(firebaseUser.uid)
+            let snap = try await docRef.getDocument()
+            guard var profile = try? snap.data(as: UserProfile.self) else {
                 try? auth.signOut()
                 state = .signedOut
                 lastError = "Your account is missing a profile. Please sign up again."
+                return
             }
+            // Legacy safety net: users created before teamID existed get auto-joined.
+            if profile.teamID == nil {
+                profile.teamID = SeedService.demoTeamID
+                try docRef.setData(from: profile)
+            }
+            state = .signedIn(profile)
         } catch {
             state = .signedOut
             lastError = friendlyMessage(from: error)
