@@ -3,12 +3,8 @@ import SwiftUI
 struct CoachTabView: View {
     var body: some View {
         TabView {
-            PlaceholderScreen(
-                title: "Roster",
-                systemImage: "list.bullet.rectangle.fill",
-                message: "Your players, their sizes and numbers."
-            )
-            .tabItem { Label("Roster", systemImage: "list.bullet.rectangle.fill") }
+            RosterView()
+                .tabItem { Label("Roster", systemImage: "list.bullet.rectangle.fill") }
 
             PlaceholderScreen(
                 title: "Orders",
